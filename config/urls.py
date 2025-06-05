@@ -1,5 +1,6 @@
 # config/urls.py
 from django.contrib import admin
+from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import include, path
 
 from drf_yasg import openapi
@@ -20,6 +21,10 @@ schema_view = get_schema_view(
 )
 
 
+def health_check(request):
+    return HttpResponse("ok")
+
+
 urlpatterns = [
     path("api/admin/", admin.site.urls),
     #
@@ -31,4 +36,10 @@ urlpatterns = [
     path("api/bulletin/", include("bulletin.urls", namespace="bulletin")),
     #
     path("api-auth/", include("rest_framework.urls")),  # login/logout через browsable API
+    # Чтобы при заходе на / не было 404, редирект на /api/swagger/
+    path("", lambda request: HttpResponseRedirect("/api/swagger/")),
+]
+
+urlpatterns += [
+    path("healthz", health_check),
 ]
