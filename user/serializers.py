@@ -35,13 +35,14 @@ class RegisterSerializer(serializers.ModelSerializer):
         """
         # password_confirmation не является полем модели User, и его нельзя передавать в create_user()
         validated_data.pop("password_confirmation")
-        # статический анализатор не знает о существовании метода create_user в менеджере модели User
+        # статический анализатор не знает о существовании метода create_user в менеджере модели User, поэтому
         user = User.objects.create_user(**validated_data)  # type: ignore
         return user
 
     class Meta:
         """
-        Говорит сериализатору, что он работает с моделью User, и обрабатывает только поля email и password.
+        Говорит сериализатору, что он работает с моделью User, и обрабатывает поля, которые нужны при регистрации:
+        'first_name', 'last_name', 'phone', 'email', 'password', 'password_confirmation'.
         """
 
         model = User
@@ -54,3 +55,19 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
     username_field = "email"
+
+
+class UserSerializer(serializers.ModelSerializer):
+    """
+    Представляет собой универсальный сериализатор пользователя.
+    """
+
+    class Meta:
+        """
+        Говорит сериализатору, что он работает с моделью User, и определяет список полей,
+        которые он должен обрабатывать.
+        """
+
+        model = User
+        fields = ["id", "email", "first_name", "last_name", "role", "is_active", "is_staff", "is_superuser"]
+        read_only_fields = ["id", "email"]

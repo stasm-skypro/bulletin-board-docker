@@ -107,7 +107,6 @@ def test_retrieve_bulletin(api_client, bulletin, user):
     assert response.status_code == status.HTTP_200_OK
     assert response.data["id"] == bulletin.id
     assert "description" in response.data
-    assert "reviews" in response.data
 
 
 def test_create_bulletin(auth_client):

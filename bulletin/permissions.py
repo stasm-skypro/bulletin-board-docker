@@ -17,7 +17,7 @@
 from rest_framework import permissions
 
 
-class IsAuthorOrAdminOrReadOnlyForBulletin(permissions.BasePermission):
+class IsAuthorOrAdminOrReadOnlyForBulletins(permissions.BasePermission):
     """
     - Аноним может только смотреть список.
     - Подробный просмотр, создание, изменение, удаление — только авторизованным.

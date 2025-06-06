@@ -19,7 +19,7 @@ users = [
 ]
 
 for first_name, last_name, email in users:
-    User.objects.create_user(
+    User.objects.create_user(  # type: ignore
         first_name=first_name, last_name=last_name, email=email, phone="+1234567890", password="P4$$w0rd"
     )
 print("Users added")

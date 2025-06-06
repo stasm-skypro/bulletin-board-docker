@@ -298,5 +298,55 @@
       "bulletin": 10,
       "created_at": "2025-05-23T10:19:00Z"
     }
+  },
+  {
+    "model": "bulletin.review",
+    "pk": 31,
+    "fields": {
+      "text": "Всё действительно соответствует описанию. Отличная покупка.",
+      "author": 2,
+      "bulletin": 1,
+      "created_at": "2025-06-01T14:30:04.894Z"
+    }
+  },
+  {
+    "model": "bulletin.review",
+    "pk": 32,
+    "fields": {
+      "text": "Всё действительно соответствует описанию. Отличная покупка.",
+      "author": 2,
+      "bulletin": 1,
+      "created_at": "2025-06-01T14:32:20.575Z"
+    }
+  },
+  {
+    "model": "bulletin.review",
+    "pk": 33,
+    "fields": {
+      "text": "Всё действительно соответствует описанию. Отличная покупка.",
+      "author": 2,
+      "bulletin": 1,
+      "created_at": "2025-06-01T14:36:32.504Z"
+    }
+  },
+  {
+    "model": "bulletin.review",
+    "pk": 34,
+    "fields": {
+      "text": "Всё действительно соответствует описанию. Отличная покупка.",
+      "author": 2,
+      "bulletin": 1,
+      "created_at": "2025-06-02T08:43:03.799Z"
+    }
+  },
+  {
+    "model": "bulletin.review",
+    "pk": 37,
+    "fields": {
+      "text": "Приятная сделка, рекомендую продавца.",
+      "author": 12,
+      "bulletin": 12,
+      "created_at": "2025-06-04T14:40:51.645611+05:00"
+    }
   }
 ]

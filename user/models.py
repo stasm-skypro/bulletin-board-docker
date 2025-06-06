@@ -122,6 +122,16 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name="Суперпользователь",
     )  # type: ignore[var-annotated]
 
+    last_login = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Последний вход",
+    )  # type: ignore[var-annotated]
+
+    date_joined = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Дата регистрации",
+    )  # type: ignore[var-annotated]
+
     objects = UserManager()
 
     USERNAME_FIELD = "email"

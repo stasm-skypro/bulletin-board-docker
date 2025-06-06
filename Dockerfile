@@ -21,6 +21,9 @@ ENV PYTHONUNBUFFERED=1
 # nc нужен в entypont_*.sh, ждать база когда будет доступна, чтобы применить миграции.
 RUN apt-get update && apt-get install -y netcat-traditional && rm -rf /var/lib/apt/lists/*
 
+# Устанавливаем curl для healthcheck-ов в docker compose
+RUN apt update && apt install -y curl
+
 # Копируем и устанавливаем зависимости
 COPY requirements.txt .
 RUN pip install --upgrade pip && \

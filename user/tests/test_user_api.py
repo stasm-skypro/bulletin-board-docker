@@ -186,3 +186,42 @@ class TestPasswordReset:
         response = self.client.post(url, data)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "Неверный или просроченный токен" in response.data["error"]
+
+
+@pytest.mark.django_db
+class TestUserMe:
+    """
+    Тесты для эндпоинта /me/ — просмотр, обновление и деактивация текущего пользователя.
+    """
+
+    def setup_method(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            email="me@example.com",
+            password="secure1234",
+            first_name="Тест",
+            last_name="Пользователь",
+            phone="79991234567",
+        )
+        token_url = reverse("user:token_obtain_pair")
+        response = self.client.post(token_url, {"email": self.user.email, "password": "secure1234"})
+        access_token = response.data["access"]
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+        self.url = reverse("user:user-me")
+
+    def test_get_user_info(self):
+        response = self.client.get(self.url)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["email"] == self.user.email
+        assert response.data["first_name"] == self.user.first_name
+
+    def test_update_user_info(self):
+        response = self.client.patch(self.url, {"first_name": "Новый"})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["first_name"] == "Новый"
+
+    def test_deactivate_user(self):
+        response = self.client.delete(self.url)
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        self.user.refresh_from_db()
+        assert self.user.is_active is False

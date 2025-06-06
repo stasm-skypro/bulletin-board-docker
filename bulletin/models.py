@@ -61,7 +61,7 @@ class Review(models.Model):
     Attributes:
               text (str): Текст отзыва;
                   author: Пользователь, который оставил отзыв;
-                      ad: Объявление, под которым оставлен отзыв;
+                bulletin: Объявление, под которым оставлен отзыв;
               created_at: Время и дата создания отзыва;
     """
 
@@ -96,7 +96,7 @@ class Review(models.Model):
         Возвращает строковое представление отзыва.
         :return: Строковое представление отзыва
         """
-        return self.text[::30]
+        return self.text[:30]
 
     class Meta:
         verbose_name = "Отзыв"

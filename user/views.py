@@ -4,14 +4,18 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
 from rest_framework import status
-from rest_framework.generics import CreateAPIView
-from rest_framework.permissions import AllowAny
+from rest_framework.generics import CreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import User
-from .serializers import EmailTokenObtainPairSerializer, RegisterSerializer  # type: ignore[reportUnusedImport]
+from .serializers import (  # type: ignore[reportUnusedImport]
+    EmailTokenObtainPairSerializer,
+    RegisterSerializer,
+    UserSerializer,
+)
 from .utils import send_password_reset_email, send_welcome_email
 
 
@@ -51,7 +55,7 @@ class RegisterAPIView(CreateAPIView):
         :type serializer: rest_framework.serializers.Serializer
         """
         user = serializer.save()
-        send_welcome_email.delay(user.email)
+        send_welcome_email.delay(user.email)  # type: ignore
 
     def create(self, request, *args, **kwargs):
         """
@@ -130,3 +134,22 @@ class PasswordResetConfirmView(APIView):
         user.save()
 
         return Response({"message": "Пароль успешно изменен"}, status=status.HTTP_200_OK)
+
+
+class UserMeAPIView(RetrieveUpdateDestroyAPIView):
+    """
+    Управление текущим пользователем:
+    - GET: Получить данные
+    - PUT/PATCH: Обновить данные
+    - DELETE: Деактивировать пользователя
+    """
+
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):  # type: ignore
+        return self.request.user
+
+    def perform_destroy(self, instance):
+        instance.is_active = False  # вместо удаления
+        instance.save()

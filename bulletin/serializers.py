@@ -4,31 +4,6 @@ from rest_framework import serializers
 from .models import Bulletin, Review
 
 
-class ReviewSerializer(serializers.ModelSerializer):
-    """
-    Сериализатор для модели Review.
-
-    Используется для преобразования объектов отзыва в JSON и обратно.
-    Поля 'id', 'author' и 'created_at' доступны только для чтения.
-    """
-
-    class Meta:
-        model = Review
-        fields = ["id", "text", "author", "bulletin", "created_at"]
-        read_only_fields = ["id", "author", "created_at"]
-
-    def create(self, validated_data):
-        """
-        Создаёт новый объект отзыва и автоматически присваивает текущего пользователя как автора.
-
-        :validated_data (dict): Валидированные данные для создания отзыва
-        :returns: Review: Созданный объект отзыва
-        """
-        # автоматически назначаем автора на текущего пользователя
-        validated_data["author"] = self.context["request"].user
-        return super().create(validated_data)
-
-
 class BulletinListSerializer(serializers.ModelSerializer):
     """
     Сериализатор для краткого представления объявлений (список).
@@ -38,24 +13,20 @@ class BulletinListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Bulletin
-        fields = ["id", "title", "price", "author", "created_at"]
-        read_only_fields = ["id", "author", "created_at"]
+        fields = ["id", "title", "price", "created_at"]
+        read_only_fields = ["id", "created_at"]
 
 
 class BulletinDetailSerializer(serializers.ModelSerializer):
     """
     Сериализатор для детального представления объявления.
 
-    Включает вложенные отзывы, связанные с данным объявлением.
-    Используется при просмотре одного объявления.
+    Используется при отображении одного объявления. Не включает описание и отзывы.
     """
-
-    reviews = ReviewSerializer(many=True, read_only=True)  # Вложенный сериализатор
 
     class Meta:
         model = Bulletin
         fields = ["id", "title", "price", "description", "author", "created_at"]
-        fields += ["reviews"]  # добавляем 'reviews' в список полей
         read_only_fields = ["id", "author", "created_at"]
 
 
@@ -81,3 +52,17 @@ class BulletinCreateSerializer(serializers.ModelSerializer):
         # автоматически назначаем автора на текущего пользователя
         validated_data["author"] = self.context["request"].user
         return super().create(validated_data)
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для модели Review.
+
+    Используется для преобразования объектов отзыва в JSON и обратно.
+    Поля 'id', 'author' и 'created_at' доступны только для чтения.
+    """
+
+    class Meta:
+        model = Review
+        fields = ["id", "text", "author", "bulletin", "created_at"]
+        read_only_fields = ["id", "author", "bulletin", "created_at"]

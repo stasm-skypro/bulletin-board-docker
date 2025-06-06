@@ -22,7 +22,7 @@ Backend-часть для сайта объявлений. Платформа п
 -   **База данных:** PostgreSQL
 -   **Аутентификация:** djangorestframework-simplejwt
 -   **Фильтрация/Поиск:** django-filter
--   **API документация:** drf-spectacular (Swagger/OpenAPI) или drf-yasg
+-   **API документация:** drf-yasg (Swagger/OpenAPI/Redoc)
 -   **Обработка изображений:** Pillow
 -   **Контейнеризация:** Docker, Docker Compose
 -   **Тестирование:** Pytest, pytest-django
@@ -32,7 +32,7 @@ Backend-часть для сайта объявлений. Платформа п
 
 ### Предварительные требования
 
--   Python 3.8+
+-   Python 3.10+
 -   Docker
 -   Docker Compose
 
@@ -40,12 +40,11 @@ Backend-часть для сайта объявлений. Платформа п
 
 1.  **Клонируйте репозиторий:**
     ```bash
-    git clone <URL_ВАШЕГО_РЕПОЗИТОРИЯ>
-    cd bulletin_board # или название вашей корневой папки проекта
+    git clone https://github.com/stasm-skypro/diploma-sb1-docker.git
     ```
 
 2.  **Настройка переменных окружения:**
-    Создайте файл `.env` в корневой директории проекта (рядом с `docker-compose.yml`). Вы можете скопировать `env.example` (если он есть) или создать новый со следующим содержимым:
+    Создайте файл `.env` в корневой директории проекта (рядом с `compose.yml`). Вы можете скопировать `env.example` (если он есть) или создать новый со следующим содержимым:
 
     ```env
     # Django settings
@@ -54,10 +53,10 @@ Backend-часть для сайта объявлений. Платформа п
     ALLOWED_HOSTS=localhost,127.0.0.1
 
     # Database settings (PostgreSQL)
-    POSTGRES_DB=bulletin_board_db
+    POSTGRES_DB=bulletin
     POSTGRES_USER=user
     POSTGRES_PASSWORD=password
-    POSTGRES_HOST=db # Имя сервиса БД в docker-compose.yml
+    POSTGRES_HOST=db # Имя сервиса БД в docker compose.yaml
     POSTGRES_PORT=5432
 
     # Email settings (для восстановления пароля)
@@ -65,24 +64,28 @@ Backend-часть для сайта объявлений. Платформа п
     EMAIL_HOST=smtp.example.com
     EMAIL_PORT=587
     EMAIL_USE_TLS=True
-    EMAIL_HOST_USER=your_email@example.com
-    EMAIL_HOST_PASSWORD=your_email_app_password
-    DEFAULT_FROM_EMAIL=noreply@example.com # Email, с которого будут отправляться письма
+    EMAIL_USE_SSL=False
+    EMAIL_HOST_USER=email@example.com
+    EMAIL_HOST_PASSWORD=email_app_password
 
-    # URL для ссылки сброса пароля (укажите домен вашего фронтенда)
-    PASSWORD_RESET_CONFIRM_URL=http://localhost:3000/password-reset/confirm/{uid}/{token}/
+    REDIS_HOST=redis_host
+    REDIS_PORT=redis_port
+
+    CELERY_BROKER_URL=redis://${REDIS_HOST}:${REDIS_PORT}/0
+    CELERY_RESULT_BACKEND=redis://${REDIS_HOST}:${REDIS_PORT}/0
     ```
 
 3.  **Сборка и запуск Docker контейнеров:**
     ```bash
-    docker-compose up --build -d
+    docker compose up --build -d
     ```
-    Эта команда соберет образы (если они еще не собраны) и запустит сервисы (`web` и `db`) в фоновом режиме.
+    Эта команда соберет образы (если они еще не собраны) и запустит сервисы в фоновом режиме.
 
 4.  **Применение миграций базы данных:**
     ```bash
-    docker-compose exec web python manage.py migrate
+    docker compose exec web python manage.py migrate
     ```
+    По умолчанию все необходимые для функционирования приложения миграции уже включены и применяются автоматически на этапе `docker compose up`.
 
 5.  **Создание суперпользователя (администратора):**
     ```bash
@@ -90,26 +93,28 @@ Backend-часть для сайта объявлений. Платформа п
     ```
     Следуйте инструкциям в консоли для создания администратора.
 
-Приложение будет доступно по адресу `http://localhost:8000` (или порт, указанный в `docker-compose.yml`).
-Документация API (Swagger/OpenAPI) будет доступна по адресу `http://localhost:8000/api/schema/swagger-ui/` или `http://localhost:8000/api/schema/redoc/`.
+Приложение будет доступно по адресу `http://localhost:8000` (или порт, указанный в `compose.yaml`).
+Документация API (Swagger/OpenAPI) будет доступна по адресу `http://localhost:8000/api/swagger/` или `http://localhost:8000/api/redoc/`. Также по адресу `http://localhost:8000/api/swaggerjson/` доступна версия документации в формате JSON без Swagger-UI.
 
 ## Модели данных
 
 ### Пользователь (`User`)
 
 -   `id` (IntegerField, Primary Key, Auto-increment): Уникальный идентификатор.
--   `email` (EmailField, Unique): Электронная почта, используется в качестве логина.
--   `password` (CharField): Пароль пользователя (хранится в хэшированном виде).
 -   `first_name` (CharField): Имя пользователя.
 -   `last_name` (CharField): Фамилия пользователя.
 -   `phone` (CharField): Телефон для связи.
+-   `email` (EmailField, Unique): Электронная почта, используется в качестве логина.
+-   `password` (CharField): Пароль пользователя (хранится в хэшированном виде).
 -   `role` (CharField): Роль пользователя (например, `user`, `admin`). По умолчанию `user`.
 -   `image` (ImageField, опционально): Аватар пользователя.
 -   `is_active` (BooleanField): Активен ли пользователь. По умолчанию `True`.
--   `last_login` (DateTimeField, опционально): Время последнего входа.
+-   `is_staff` (BooleanField): Является ли пользователь персоналом. По умолчанию `False`.
+-   `is_superuser` (BooleanField): Является ли пользователь суперпользователем. По умолчанию `False`.
+-   `last_login` (DateTimeField, auto_now_add=True): Время последнего входа.
 -   `date_joined` (DateTimeField, auto_now_add=True): Дата регистрации.
 
-### Объявление (`Ad`)
+### Объявление (`Bulletin`)
 
 -   `id` (IntegerField, Primary Key, Auto-increment): Уникальный идентификатор.
 -   `title` (CharField): Название товара/объявления.
@@ -124,7 +129,7 @@ Backend-часть для сайта объявлений. Платформа п
 -   `id` (IntegerField, Primary Key, Auto-increment): Уникальный идентификатор.
 -   `text` (TextField): Текст отзыва.
 -   `author` (ForeignKey to `User`): Пользователь, оставивший отзыв.
--   `ad` (ForeignKey to `Ad`): Объявление, к которому оставлен отзыв.
+-   `bulletin` (ForeignKey to `Bulletin`): Объявление, к которому оставлен отзыв.
 -   `created_at` (DateTimeField, auto_now_add=True): Дата и время создания отзыва.
 
 ## API Эндпоинты
@@ -134,20 +139,21 @@ Backend-часть для сайта объявлений. Платформа п
 ### Аутентификация и Пользователи
 
 #### 1. Регистрация пользователя
--   **POST** `/api/users/`
+-   **POST** `/api/user/users/`
 -   **Request body:**
     ```json
     {
-        "email": "user@example.com",
-        "password": "password123",
         "first_name": "Имя",
         "last_name": "Фамилия",
-        "phone": "+71234567890"
+        "phone": "+71234567890",
+        "email": "user@example.com",
+        "password": "password123",
+        "password_confirmation": "password123"
     }
     ```
 
 #### 2. Получение JWT токенов (Вход)
--   **POST** `/api/token/`
+-   **POST** `/api/login/`
 -   **Request body:**
     ```json
     {
@@ -179,22 +185,22 @@ Backend-часть для сайта объявлений. Платформа п
     ```
 
 #### 4. Управление текущим пользователем (Профиль)
--   **GET** `/api/users/me/`: Получить данные текущего пользователя.
--   **PUT/PATCH** `/api/users/me/`: Обновить данные текущего пользователя.
--   **DELETE** `/api/users/me/`: Удалить (деактивировать) текущего пользователя.
+-   **GET** `/api/user/users/me/`: Получить данные текущего пользователя.
+-   **PUT/PATCH** `/api/user/users/me/`: Обновить данные текущего пользователя.
+-   **DELETE** `/api/user/users/me/`: Удалить (деактивировать) текущего пользователя.
 
 #### 5. Сброс пароля (Запрос на сброс)
--   **POST** `/api/users/reset_password/`
+-   **POST** `/api/user/reset_password/`
 -   **Request body:**
     ```json
     {
         "email": "user@example.com"
     }
     ```
--   **Действие:** Сервер отправляет на указанную почту ссылку для сброса пароля. Ссылка формируется на основе `PASSWORD_RESET_CONFIRM_URL` из настроек (например, `http://your-frontend-domain.com/password-reset/confirm/{uid}/{token}/`).
+-   **Действие:** Сервер отправляет на указанную почту ссылку для сброса пароля. Ссылка формируется на основе `PASSWORD_RESET_CONFIRM_URL` из настроек (например, `http://localhost:8000/reset_password_confirm/?uid={uid}&token={token}/`).
 
 #### 6. Сброс пароля (Подтверждение нового пароля)
--   **POST** `/api/users/reset_password_confirm/`
+-   **POST** `/api/user/reset_password_confirm/`
 -   **Request body:**
     ```json
     {
@@ -204,63 +210,63 @@ Backend-часть для сайта объявлений. Платформа п
     }
     ```
 
-### Объявления (`/api/ads/`)
+### Объявления (`/api/bulletin/bulletins/`)
 
--   **GET** `/api/ads/`: Получение списка всех объявлений.
+-   **GET** `/api/bulletin/bulletins/`: Получение списка всех объявлений.
     -   Доступ: Анонимные пользователи, Авторизованные пользователи, Администраторы.
     -   Поддерживает пагинацию (по умолчанию 4 объекта на странице).
-    -   Поддерживает поиск по названию (`title`) через query-параметр: `/api/ads/?title=искомое_слово`. (Реализовано с `django-filter`).
--   **POST** `/api/ads/`: Создание нового объявления.
+    -   Поддерживает поиск по названию (`title`) через query-параметр: `/api/bulletins/?title=искомое_слово`. (Реализовано с `django-filter`).
+-   **POST** `/api/bulletin/bulletins/`: Создание нового объявления.
     -   Доступ: Авторизованные пользователи.
--   **GET** `/api/ads/{id}/`: Получение конкретного объявления.
+-   **GET** `/api/bulletin/bulletins/{id}/`: Получение конкретного объявления.
     -   Доступ: Авторизованные пользователи, Администраторы.
--   **PUT/PATCH** `/api/ads/{id}/`: Обновление объявления.
+-   **PUT/PATCH** `/api/bulletin/bulletins/{id}/`: Обновление объявления.
     -   Доступ: Владелец объявления или Администратор.
--   **DELETE** `/api/ads/{id}/`: Удаление объявления.
+-   **DELETE** `/api/bulletin/bulletins/{id}/`: Удаление объявления.
     -   Доступ: Владелец объявления или Администратор.
--   **GET** `/api/ads/me/`: Получение списка объявлений текущего авторизованного пользователя.
+-   **GET** `/api/bulletin/bulletins/me/`: Получение списка объявлений текущего авторизованного пользователя.
     -   Доступ: Авторизованные пользователи.
 
-### Отзывы (`/api/ads/{ad_pk}/reviews/`)
+### Отзывы (`/api/bulletins/{ad_pk}/reviews/`)
 
--   **GET** `/api/ads/{ad_pk}/reviews/`: Получение списка всех отзывов для объявления с ID=`ad_pk`.
+-   **GET** `/api/bulletins/{ad_pk}/reviews/`: Получение списка всех отзывов для объявления с ID=`ad_pk`.
     -   Доступ: Авторизованные пользователи, Администраторы.
--   **POST** `/api/ads/{ad_pk}/reviews/`: Создание нового отзыва для объявления с ID=`ad_pk`.
+-   **POST** `/api/bulletins/{ad_pk}/reviews/`: Создание нового отзыва для объявления с ID=`ad_pk`.
     -   Доступ: Авторизованные пользователи.
--   **GET** `/api/ads/{ad_pk}/reviews/{review_pk}/`: Получение конкретного отзыва с ID=`review_pk` для объявления с ID=`ad_pk`.
+-   **GET** `/api/bulletins/{ad_pk}/reviews/{review_pk}/`: Получение конкретного отзыва с ID=`review_pk` для объявления с ID=`ad_pk`.
     -   Доступ: Авторизованные пользователи, Администраторы.
--   **PUT/PATCH** `/api/ads/{ad_pk}/reviews/{review_pk}/`: Обновление отзыва.
+-   **PUT/PATCH** `/api/bulletins/{ad_pk}/reviews/{review_pk}/`: Обновление отзыва.
     -   Доступ: Владелец отзыва или Администратор.
--   **DELETE** `/api/ads/{ad_pk}/reviews/{review_pk}/`: Удаление отзыва.
+-   **DELETE** `/api/bulletins/{ad_pk}/reviews/{review_pk}/`: Удаление отзыва.
     -   Доступ: Владелец отзыва или Администратор.
 
 ## Права доступа (Permissions)
 
 -   **Анонимный пользователь:**
-    -   Может получать список объявлений (`GET /api/ads/`).
+    -   Может получать список объявлений (`GET /api/bulletin/bulletins/`).
 -   **Авторизованный пользователь (`user`):**
     -   Все права анонимного пользователя.
-    -   Получать одно объявление (`GET /api/ads/{id}/`).
-    -   Создавать объявление (`POST /api/ads/`).
+    -   Получать одно объявление (`GET /api/bulletin/bulletins/{id}/`).
+    -   Создавать объявление (`POST /api/bulletin/bulletins/`).
     -   Редактировать и удалять **свои** объявления.
-    -   Получать список своих объявлений (`GET /api/ads/me/`).
-    -   Получать список отзывов к объявлению (`GET /api/ads/{ad_pk}/reviews/`).
-    -   Получать один отзыв (`GET /api/ads/{ad_pk}/reviews/{review_pk}/`).
-    -   Создавать отзывы (`POST /api/ads/{ad_pk}/reviews/`).
+    -   Получать список своих объявлений (`GET /api/bulletin/bulletins/me/`).
+    -   Получать список отзывов к объявлению (`GET /api/bulletin/bulletins/{ad_pk}/reviews/`).
+    -   Получать один отзыв (`GET /api/bulletin/bulletins/{ad_pk}/reviews/{review_pk}/`).
+    -   Создавать отзывы (`POST /api/bulletin/bulletins/{ad_pk}/reviews/`).
     -   Редактировать и удалять **свои** отзывы.
-    -   Управлять своим профилем (`GET/PUT/PATCH/DELETE /api/users/me/`).
+    -   Управлять своим профилем (`GET/PUT/PATCH/DELETE /api/user/users/`).
 -   **Администратор (`admin`):**
     -   Все права авторизованного пользователя.
     -   Редактировать и удалять **любые** объявления.
     -   Редактировать и удалять **любые** отзывы.
-    -   Управлять всеми пользователями (просмотр списка, создание, редактирование, удаление через `/api/users/`, `/api/users/{id}/`).
+    -   Управлять всеми пользователями (просмотр списка, создание, редактирование, удаление через `/api/user/users/`, `/api/user/users/{id}/`).
 
 ## Тестирование
 
 -   Тесты написаны с использованием библиотеки `pytest` и `pytest-django`.
 -   Для запуска тестов выполните команду в контейнере `web` (убедитесь, что контейнеры запущены):
     ```bash
-    docker-compose exec web pytest
+    docker compose exec web pytest .
     ```
 -   Тесты покрывают основные функции платформы, включая CRUD операции для моделей, аутентификацию, права доступа и логику API эндпоинтов.
 
@@ -268,7 +274,7 @@ Backend-часть для сайта объявлений. Платформа п
 
 -   Проект полностью контейнеризирован с использованием Docker и Docker Compose.
 -   `Dockerfile` (в директории сервиса `web`) описывает сборку образа Django-приложения.
--   `docker-compose.yml` (в корне проекта) оркестрирует запуск сервисов приложения:
+-   `compose.yml` (в корне проекта) оркестрирует запуск сервисов приложения:
     -   `web`: Django-приложение Gunicorn/Daphne.
     -   `db`: База данных PostgreSQL.
     -   (Опционально) `nginx`: Веб-сервер для раздачи статики и проксирования запросов к `web`.
