@@ -77,7 +77,7 @@ Backend-часть для сайта объявлений. Платформа п
 
 3.  **Сборка и запуск Docker контейнеров:**
     ```bash
-    docker compose up --build -d
+    docker compose build --no-cache && docker compose up
     ```
 
     или
