@@ -79,12 +79,7 @@ Backend-часть для сайта объявлений. Платформа п
     ```bash
     docker compose build --no-cache && docker compose up
     ```
-
-    или
-
-    ```bash
-    docker compose build --no-cache && docker compose up
-    ```
+    
     Эта команда соберет образы (если они еще не собраны) и запустит сервисы в фоновом режиме.
 
 4.  **Применение миграций базы данных:**
